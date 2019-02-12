@@ -1,8 +1,10 @@
 
 import FinanceDataReader as fdr
 import matplotlib.pyplot as plt
-import os
+import pandas as pd
+import os, glob
 import csv
+
 
 # Using FinanceDataReader
 # https://github.com/FinanceData/FinanceDataReader/wiki/Users-Guide
@@ -47,6 +49,33 @@ def download_kospi200_stock_prices():
         # break
 
     print('%d stocks price exported' % count)
+
+
+def load_stock_prices(path=STOCK_PRICE_DATA_DIR):
+    pattern = '{}/*.csv'.format(path)
+    matched = glob.glob(pattern)
+    print('%d stock price files found in %s' % (len(matched), path))
+
+    prices = {}
+    for file in matched: 
+        # if "001520" not in file: 
+        #   continue 
+
+        print('Reading %s ... ' % file, end='')
+
+        # To read korean named file, use python parser engine. 
+        df = pd.read_csv(file, engine='python')
+        df2 = df[['Open', 'High', 'Low', 'Close', 'Volume']]
+        data = df2.to_numpy()
+
+        print('%d trading days loaded' % data.shape[0])
+        base = os.path.basename(file)
+        name = os.path.splitext(base)[0]
+        prices[name] = data 
+        # break 
+    
+    print('Totally, %d stocks price data loaded' % len(prices))
+    return prices 
 
 
 if __name__ == '__main__':
