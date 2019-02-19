@@ -2,6 +2,7 @@
 import FinanceDataReader as fdr
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 import os, glob
 import csv
 
@@ -12,10 +13,31 @@ import csv
 
 KOSPI_200_STOCKS_FILE = 'KOSPI200.csv'
 STOCK_PRICE_START_DATE = '1998-01-01'
+STOCK_PRICE_REFER_DATE = '2018-01-01'
 STOCK_PRICE_DATA_DIR = './prices'
 
 
-def download_kospi200_stock_prices():
+class Stock(): 
+    def __init__(self, symbol, name, data=None): 
+        self.symbol = symbol 
+        self.name = name 
+        self.data = data 
+        self.prices = None 
+        self.examples = [] 
+        self.examples_mean = []
+        self.examples_stde = [] 
+
+    def label(self):
+        return '{} ({})'.format(self.symbol, self.name)
+
+    def recent_examples(self, days):
+        data = self.examples[-days:]
+        data = np.asarray(data).astype(np.float32)
+        return data 
+
+
+
+def read_kospi200_symbols(append_ks200=False):
     if not os.path.exists(KOSPI_200_STOCKS_FILE):
         print("Can't find KOSPI-200 stocks symbol file!")
         return
@@ -25,12 +47,40 @@ def download_kospi200_stock_prices():
         reader = csv.reader(f)
         for line in reader:
             print(line)
-            stocks.append(tuple(line))
+            stocks.append(Stock(line[0], line[1]))
+            # stocks.append(tuple(line))
+            break
 
         # KOSPI 200 index prices are available since 2001-01-02.
-        stocks.append(('KS200', 'KOSPI200지수'))
+        stocks.append(Stock('KS200', 'KOSPI200지수'))
 
     print('%d stocks symbol loaded' % len(stocks))
+    return stocks 
+
+
+def read_stock_data(symbol, refer_date):
+    df = fdr.DataReader(symbol, refer_date)
+    df2 = df[['Open', 'High', 'Low', 'Close', 'Volume']]
+    data = df2.to_numpy()
+    date = df.index.tolist()
+    return data 
+
+
+def read_kospi200_stock_data():
+    stocks = read_kospi200_symbols()
+
+    for stock in stocks:
+        print('Fetching %s ... ' % stock.label(), end='')
+        data = read_stock_data(stock.symbol, STOCK_PRICE_REFER_DATE)
+        stock.data = data 
+        print('%d trading days loaded' % data.shape[0])
+
+    return stocks 
+
+
+def download_kospi200_stock_prices():
+    stocks = read_kospi200_symbols()
+
     if not os.path.exists(STOCK_PRICE_DATA_DIR):
         os.makedirs(STOCK_PRICE_DATA_DIR)
 
@@ -54,9 +104,9 @@ def download_kospi200_stock_prices():
 def load_stock_prices(path=STOCK_PRICE_DATA_DIR):
     pattern = '{}/*.csv'.format(path)
     matched = glob.glob(pattern)
-    print('%d stock price files found in %s' % (len(matched), path))
+    print('%d stock price files found in \'%s\' (\'%s\')' % (len(matched), path, os.getcwd()))
 
-    prices = {}
+    stocks = []
     for file in matched: 
         # if "001520" not in file: 
         #   continue 
@@ -71,11 +121,11 @@ def load_stock_prices(path=STOCK_PRICE_DATA_DIR):
         print('%d trading days loaded' % data.shape[0])
         base = os.path.basename(file)
         name = os.path.splitext(base)[0]
-        prices[name] = data 
+        stocks.append(Stock(name[:6], name[7:], data))
         # break 
     
-    print('Totally, %d stocks price data loaded' % len(prices))
-    return prices 
+    print('Totally, %d stocks price data loaded' % len(stocks))
+    return stocks 
 
 
 if __name__ == '__main__':
