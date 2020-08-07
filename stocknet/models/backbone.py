@@ -88,13 +88,15 @@ class Backbone(object):
                 pred_change = predicts[i, 0] - last_close
                 real_change = dataset.y_test[i, 0] - last_close
 
-                if abs(pred_change - real_change) < 0.01 or pred_change * real_change > 0:
+                # if abs(pred_change - real_change) < 0.01 or pred_change * real_change > 0:
+                if pred_change * real_change > 0:
                     agrees1 += 1 
 
                 pred_change = predicts[i, 2] - last_close
                 real_change = dataset.y_test[i, 2] - last_close
 
-                if abs(pred_change - real_change) < 0.01 or pred_change * real_change > 0:
+                # if abs(pred_change - real_change) < 0.01 or pred_change * real_change > 0:
+                if pred_change * real_change > 0:
                     agrees2 += 1 
 
             print('Test examples: %d, corrects: %d (%.4f), %d (%.4f)' % (size, agrees1, (agrees1/size), agrees2, (agrees2/size)))

@@ -26,7 +26,7 @@ class Dataset():
     def build_dataset(self, save=True):
         stocks = load_stock_prices()
         preprare_examples(stocks)
-        normalize_examples(stocks)
+        normalize_examples2(stocks)
         dataset = split_train_test_examples(stocks)
         
         self.x_train = np.asarray(dataset[0]).astype(np.float32)
@@ -155,6 +155,57 @@ def normalize_examples(stocks):
             for k in range(3, 9):
                 norm[:, k] = (example[:, k] - mean) / stde
 
+            feats.append(norm)
+            means.append(mean)
+            stdes.append(stde)
+        
+            # print(example)
+            # print(norm)
+
+        # Note that the mean and stdev for the input sequence should be stored 
+        # to restore the original price values. 
+        stock.examples = feats 
+        stock.examples_mean = means 
+        stock.examples_stde = stdes 
+
+    return stocks 
+
+
+def normalize_examples2(stocks):
+    for stock in stocks:
+        print("Normalizing examples ... %s" % stock.label())
+
+        data = stock.examples
+        feats = []
+        means = []
+        stdes = []
+        for i, example in enumerate(data):
+            assert (example.shape[0] == EXAMPLE_DATA_SIZE or example.shape[0] == INPUT_DATA_SIZE)
+            assert example.shape[1] == NUM_FEATURES 
+
+            vals = list(example[:INPUT_DATA_SIZE, 3])
+            mean = np.mean(vals)
+            stde = np.std(vals) + 1
+
+            size = example.shape[0]
+            data = example 
+
+            c_open = np.array([1.0] + [(t[0] / t[1]) for t in zip(data[1:size, 0], data[0:size-1, 3])])
+            c_high = np.array([t[0] / t[1] for t in zip(data[:, 1], data[:, 0])])
+            c_lows = np.array([t[0] / t[1] for t in zip(data[:, 2], data[:, 0])])
+            c_close = np.array([data[0, 3]/data[0, 0]] + [t[0] / t[1] for t 
+                                in zip(data[1:size, 3], data[0:size-1, 3])])
+
+            c_avg05 = np.array([t[0] / t[1] for t in zip(data[:, 4], data[:, 0])])
+            c_avg10 = np.array([t[0] / t[1] for t in zip(data[:, 5], data[:, 0])])
+            c_avg20 = np.array([t[0] / t[1] for t in zip(data[:, 6], data[:, 0])])
+            c_avg60 = np.array([t[0] / t[1] for t in zip(data[:, 7], data[:, 0])])
+            c_avg120 = np.array([t[0] / t[1] for t in zip(data[:, 8], data[:, 0])])
+
+            norm = np.column_stack((c_open, c_high, c_lows, c_close, 
+                        c_avg05, c_avg10, c_avg20, c_avg60, c_avg120))
+            norm = norm - 1.0 
+            
             feats.append(norm)
             means.append(mean)
             stdes.append(stde)

@@ -30,9 +30,9 @@ def main(args=None):
     ds = Dataset() 
     ds.load_dataset()
 
-    net = models.backbone('resnet')
-    net.train_stocknet(ds, load_weights=False)
-    net.evaluate_stocknet(ds)
+    net = models.backbone('cnnnet')
+    #net.train_stocknet(ds, load_weights=True)
+    #net.evaluate_stocknet(ds)
     net.predict_stocknet(ds, train_data=False, test_data=True)
     return
 

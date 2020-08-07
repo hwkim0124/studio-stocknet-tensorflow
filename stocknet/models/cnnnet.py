@@ -38,7 +38,7 @@ class CnnNetBackbone(Backbone):
         self.history = model.fit(
             dataset.x_train, dataset.y_train, 
             validation_data=(dataset.x_test, dataset.y_test), 
-            epochs=100, 
+            epochs=200, 
             batch_size=128
         )
         print('Training {} completed'.format(self.backbone))
